@@ -1,0 +1,45 @@
+name: US Market Daily Update
+
+on:
+  schedule:
+    # 22:15 UTC = 06:15 Asia/Taipei next day; after the US regular session close in both EST/EDT.
+    - cron: "15 22 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stock-monitor-us-market
+  cancel-in-progress: false
+
+jobs:
+  update-us-market:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Update multi-market snapshots after US close
+        env:
+          PUSH_API_BASE: ${{ secrets.PUSH_API_BASE }}
+          PUSH_ADMIN_TOKEN: ${{ secrets.PUSH_ADMIN_TOKEN }}
+        run: python update_multi_stock.py
+
+      - name: Commit updated multi-market data
+        run: |
+          git config user.name "stock-monitor"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/stocks.json data/multi_stock_states.json
+          git diff --cached --quiet || git commit -m "Update multi-market stock snapshots"
+          git push

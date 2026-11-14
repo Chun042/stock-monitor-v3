@@ -1,0 +1,4 @@
+window.APP_CONFIG = {
+  VAPID_PUBLIC_KEY: "PASTE_VAPID_PUBLIC_KEY",
+  PUSH_API_BASE: "https://YOUR-WORKER.workers.dev"
+};

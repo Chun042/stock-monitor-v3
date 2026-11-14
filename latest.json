@@ -1,0 +1,16 @@
+{
+  "symbol": "2330.TW",
+  "name": "台積電",
+  "trade_date": null,
+  "updated_at": null,
+  "close": null,
+  "change_pct": null,
+  "indicators": {},
+  "states": {},
+  "events": [],
+  "revenue_latest": null,
+  "history": [],
+  "data_status": {
+    "note": "等待首次 GitHub Actions 雲端更新"
+  }
+}

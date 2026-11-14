@@ -1,0 +1,17 @@
+{
+  "name": "Stock Monitor V3.0｜多市場投資儀表板",
+  "short_name": "Stock Monitor",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#090f1a",
+  "theme_color": "#0a101c",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
