@@ -1,4 +1,4 @@
-name: TSMC Daily Monitor
+name: Taiwan Market Daily Update
 
 on:
   schedule:
