@@ -1,0 +1,16 @@
+{
+  "TW:2330": {
+    "trade_date": "2026-11-13",
+    "states": {
+      "price_vs_ma20": "above",
+      "price_vs_ma60": "below",
+      "ma20_vs_ma60": "bear",
+      "ma60_vs_ma120": "bull",
+      "rsi_zone": "偏弱(30-50)",
+      "macd": "bull",
+      "kd": "K>D",
+      "volume": "normal",
+      "breakout20": false
+    }
+  }
+}
