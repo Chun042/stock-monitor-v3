@@ -336,14 +336,26 @@ function profileId(){
   if(!id){id="p_"+crypto.randomUUID().replace(/-/g,"");localStorage.setItem(key,id)}
   return id;
 }
-function invite(){return document.getElementById("inviteCode").value.trim()}
+function invite(){
+  const input=document.getElementById("inviteCode");
+  if(!input.value){
+    input.value=localStorage.getItem("sm_v3_invite_code")||"";
+  }
+  return input.value.trim();
+}
 async function v3api(path,method="GET",body=null){
   if(!API_BASE_V3)throw new Error("尚未設定 PUSH_API_BASE / Cloudflare Worker URL");
   const url=API_BASE_V3+path;
   const opts={method,headers:{"Content-Type":"application/json"}};
   if(body)opts.body=JSON.stringify(body);
   const r=await fetch(url,opts);const d=await r.json();
-  if(!r.ok)throw new Error(d.error||"API 請求失敗");return d;
+  if(!r.ok)throw new Error(d.error||"API 請求失敗");
+
+if(body?.inviteCode){
+  localStorage.setItem("sm_v3_invite_code",body.inviteCode);
+}
+
+return d;
 }
 let stockMap={};
 async function loadPublishedStocks(){
