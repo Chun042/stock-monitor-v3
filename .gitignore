@@ -1,0 +1,13 @@
+# Local secrets and environment
+.env
+.env.*
+!.env.example
+
+# Local-only test output (never publish or commit)
+local_test/
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Runtime data generated locally
