@@ -155,6 +155,10 @@
       <div class="panel chart-panel">
         <div class="panel-head">
           <div><div class="panel-title">價格走勢 / PRICE ACTION</div><div class="panel-caption">K 線、均線與成交量 · Taiwan market color convention</div></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <label class="muted" for="stockSelector">目前圖表：</label>
+            <select id="stockSelector" aria-label="選擇圖表股票" style="background:#0b1422;border:1px solid #2a3b53;color:var(--text);border-radius:8px;padding:7px 9px;max-width:190px"><option value="TW:2330">台積電 2330</option></select>
+          </div>
           <div class="ranges" id="rangeControls">
             <button class="range-btn" data-range="30">1M</button>
             <button class="range-btn active" data-range="90">3M</button>
@@ -299,8 +303,7 @@ async function loadData(){
     document.getElementById("volRatio").textContent=i["量比"]==null?"—":`${fmt(i["量比"])}x`;
     const states=d.states||{};
     document.getElementById("states").innerHTML=Object.entries(states).map(([k,v])=>`<div class="state-row"><span class="state-name">${stateNames[k]||k}</span><span class="state-value"><span class="pill ${stateClass(v)}">${v??"資料不足"}</span></span></div>`).join("")||'<div class="muted">尚無技術狀態資料</div>';
-    const events=d.events||[];
-    document.getElementById("events").innerHTML=events.length?events.map(x=>`<div class="event">◈ ${x}</div>`).join():'<div class="muted">今日沒有狀態跨越事件；指標數值已更新。</div>';
+    renderEvents(d.events,d.states);
     const rev=d.revenue_latest;
     document.getElementById("revdate").textContent=rev?.date||"—";
     document.getElementById("revyoy").textContent=rev?.yoy_pct==null?"—":`${fmt(rev.yoy_pct)}%`;
@@ -361,9 +364,16 @@ let stockMap={};
 async function loadPublishedStocks(){
   try{
     const r=await fetch("stocks.json?ts="+Date.now(),{cache:"no-store"});
-    if(!r.ok)return;
+    if(!r.ok)throw new Error("stocks.json 尚未發布");
     const d=await r.json();stockMap={};
     for(const s of (d.stocks||[]))stockMap[s.market+":"+s.symbol]=s;
+    const selector=document.getElementById("stockSelector"),current=selector.value;
+    selector.innerHTML=(d.stocks||[]).map(s=>`<option value="${escapeHTML(s.market+":"+s.symbol)}">${escapeHTML(s.name||s.symbol)} ${escapeHTML(s.symbol)}</option>`).join("")||'<option value="TW:2330">台積電 2330</option>';
+    if(stockMap[current])selector.value=current;
+    else if(stockMap["TW:2330"])selector.value="TW:2330";
+    selector.title=`目前有 ${d.count??(d.stocks||[]).length} 檔行情快照`;
+    document.getElementById("watchStatus").dataset.snapshotCount=String(d.count??(d.stocks||[]).length);
+    if(stockMap[selector.value])selectV3Stock(stockMap[selector.value]);
   }catch(e){console.warn("stocks.json not available",e)}
 }
 async function loadWatchlist(){
@@ -379,7 +389,8 @@ async function loadWatchlist(){
       const s=stockMap[x.market+":"+x.symbol],price=s?.close,chg=s?.change_pct,rsi=s?.indicators?.RSI14,ma20=s?.indicators?.MA20,ma60=s?.indicators?.MA60;
       return `<tr><td><b>${escapeHTML(x.display_name)}</b><div class="muted">${escapeHTML(x.symbol)}</div></td><td>${escapeHTML(x.market)}</td><td>${price==null?"待更新":Number(price).toLocaleString("zh-TW",{maximumFractionDigits:2})}</td><td class="${Number(chg)>=0?"positive":"negative"}">${chg==null?"—":(Number(chg)>0?"+":"")+Number(chg).toFixed(2)+"%"}</td><td>${rsi==null?"—":Number(rsi).toFixed(1)}</td><td>${ma20==null?"—":Number(ma20).toFixed(1)} / ${ma60==null?"—":Number(ma60).toFixed(1)}</td><td><button class="table-action" data-view="${x.symbol}" data-market="${x.market}">查看</button> <button class="table-action" data-remove="${x.symbol}" data-market="${x.market}">移除</button></td></tr>`;
     }).join("");
-    status.textContent="自選股已載入。新增或移除後，雲端行情會在下一次 GitHub Actions 更新後出現；也可手動執行 workflow。";
+    const snapshots=Number(status.dataset.snapshotCount||0);
+    status.textContent=`自選股已載入。圖表選單目前有 ${snapshots} 檔行情；新增股票後請執行 GitHub Actions 的 TSMC Daily Monitor，等 stocks.json 更新後即可切換。`;
   }catch(e){status.textContent=e.message+"。請確認邀請碼及 Worker 已完成 V3 D1 migration。"}
 }
 document.getElementById("addWatch").addEventListener("click",async()=>{
@@ -409,6 +420,7 @@ document.getElementById("watchRows").addEventListener("click",async e=>{
 });
 function selectV3Stock(s){
   document.querySelector(".hero h1").textContent=`${s.name} / ${s.symbol}`;
+  document.querySelector(".hero .eyebrow").textContent=`${s.market==="US"?"US MARKET":"TAIWAN STOCK EXCHANGE"} · ${s.symbol}`;
   document.querySelector(".hero .subline").textContent=`${s.market==="US"?"美股":"台股"} · 交易日 ${s.trade_date} · ${s.ticker}`;
   document.getElementById("close").textContent=(s.currency==="USD"?"$":"NT$ ")+Number(s.close).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
   const pct=s.change_pct,change=document.getElementById("change");
@@ -421,10 +433,22 @@ function selectV3Stock(s){
   document.getElementById("macd").textContent=i["MACD柱"]==null?"—":Number(i["MACD柱"]).toFixed(2);
   document.getElementById("volRatio").textContent=i["量比"]==null?"—":Number(i["量比"]).toFixed(2)+"x";
   const names={price_vs_ma20:"收盤 vs MA20",price_vs_ma60:"收盤 vs MA60",ma20_vs_ma60:"MA20 vs MA60",ma60_vs_ma120:"MA60 vs MA120",rsi_zone:"RSI 區間",macd:"MACD",kd:"KD",volume:"成交量",breakout20:"20 日突破"};
-  document.getElementById("states").innerHTML=Object.entries(s.states||{}).map(([k,v])=>`<div class="state-row"><span class="state-name">${names[k]||k}</span><span class="state-value"><span class="pill">${v??"資料不足"}</span></span></div>`).join("");
-  document.getElementById("events").innerHTML=(s.events||[]).map(x=>`<div class="event">◈ ${x}</div>`).join("")||'<div class="muted">目前沒有新的狀態變化事件。</div>';
+  document.getElementById("states").innerHTML=Object.entries(s.states||{}).map(([k,v])=>`<div class="state-row"><span class="state-name">${names[k]||k}</span><span class="state-value"><span class="pill ${stateClass(v)}">${escapeHTML(v??"資料不足")}</span></span></div>`).join("")||'<div class="muted">尚無技術狀態資料</div>';
+  renderEvents(s.events,s.states);
   drawCharts(s.history||[]);
+  const selector=document.getElementById("stockSelector"),key=s.market+":"+s.symbol;
+  if([...selector.options].some(o=>o.value===key))selector.value=key;
 }
+function renderEvents(events,states){
+  const el=document.getElementById("events"),list=Array.isArray(events)?events:[];
+  if(list.length){el.innerHTML=list.map(x=>`<div class="event">◈ ${escapeHTML(x)}</div>`).join("");return}
+  const active=Object.entries(states||{}).filter(([,v])=>v!==null&&v!==undefined&&v!=="").slice(0,4);
+  el.innerHTML=active.length?'<div class="muted" style="margin-bottom:7px">最近沒有跨越事件；以下為最新技術狀態</div>'+active.map(([k,v])=>`<div class="event">◈ ${escapeHTML(stateNames[k]||k)}：${escapeHTML(v)}</div>`).join():'<div class="muted">尚無事件或技術狀態資料。</div>';
+}
+document.getElementById("stockSelector").addEventListener("change",e=>{
+  const s=stockMap[e.target.value];
+  if(s)selectV3Stock(s);
+});
 document.getElementById("saveHolding").addEventListener("click",async()=>{
   const symbol=document.getElementById("holdingSymbol").value.trim().toUpperCase(),market=document.getElementById("holdingMarket").value;
   const quantity=Number(document.getElementById("holdingQty").value),averageCost=Number(document.getElementById("holdingCost").value);
@@ -458,9 +482,11 @@ document.getElementById("holdingRows").addEventListener("click",async e=>{
 document.getElementById("profileName").value=localStorage.getItem("sm_v3_profile_name")||"";
 document.getElementById("profileName").addEventListener("change",e=>{localStorage.setItem("sm_v3_profile_name",e.target.value.trim());loadWatchlist();loadHoldings()});
 
-loadData();
-loadWatchlist();
-loadHoldings();
+(async()=>{
+  await loadData();
+  await loadWatchlist();
+  await loadHoldings();
+})();
 </script>
 </body>
 </html>
