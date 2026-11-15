@@ -146,7 +146,7 @@ iPhone Web Push：iOS/iPadOS 16.4+，以 Safari 開啟 HTTPS 網站、加入主�
 - 原有 `update_tsmc_tracker.py`、2330 的 FinMind 基本面/法人資料、指標與通知仍保留；新多股行情由 `update_multi_stock.py` 擴充。
 
 ### Cloudflare D1 升級
-在 Cloudflare D1 Console 選取原本的資料庫，執行 `cloudflare-multiuser/migrations/0002_watchlists_holdings.sql` 的 SQL 內容。不要刪除原本 `devices` 資料表。
+在 Cloudflare D1 Console 選取原本的資料庫，依序執行 `cloudflare-multiuser/migrations/0002_watchlists_holdings.sql` 和 `cloudflare-multiuser/migrations/0003_profiles.sql`。不要刪除原本 `devices` 資料表。
 Worker 需要沿用既有 bindings/secrets：
 - D1 binding：`DB`
 - Variables/secrets：`ALLOWED_ORIGIN`、`INVITE_CODE`、`ADMIN_TOKEN`
@@ -155,11 +155,24 @@ Worker 需要沿用既有 bindings/secrets：
 
 將新版 `cloudflare-multiuser/worker.js` 部署到原 Worker。`wrangler.toml` 中的 D1 database_id 請保留你原本已建立的值，不要使用範例 placeholder。
 
+### 管理 profile 與公用電腦清理
+每個瀏覽器暱稱對應一個本機 `owner_id`；D1 會保存暱稱、自選股與持倉。管理者可在可信任的命令列使用管理工具，管理憑證不會放進公開網頁：
+
+```bash
+export PUSH_API_BASE="https://你的-worker.workers.dev"
+python3 scripts/manage_profiles.py list
+python3 scripts/manage_profiles.py delete 完整的_owner_id
+```
+
+工具會提示輸入 Worker 的 `ADMIN_TOKEN`（輸入時不會顯示）。刪除前必須再次輸入完整 `owner_id`；刪除會移除該 profile 的暱稱、自選股和持倉，不會移除推播裝置。舊 profile 尚未同步暱稱時，清單會以自選股／持倉摘要協助辨認。
+
+公用電腦使用完畢時，先用管理工具刪除該 profile，再在瀏覽器設定中清除此網站的 Cookie 與網站資料。清除本機資料會移除暱稱、profile ID 和保存的邀請碼；如果只刪雲端資料而未清除本機資料，該瀏覽器再次連線時可能重新建立 profile。推播裝置需在網站的推播設定中另外取消；若邀請碼已被他人取得，請在 Cloudflare Worker 輪替 `INVITE_CODE`。
+
 ### 使用方式
 1. 部署新版 Worker，並先執行 D1 migration。
 2. 將新版專案更新到 GitHub Repository，保留 GitHub Secrets。
 3. 手動執行 GitHub Actions `TSMC Daily Monitor` 一次；確認 `docs/stocks.json` 成功產生。
-4. 開啟 GitHub Pages，在「我的自選股」輸入市場、股票代號與顯示名稱，並在推播設定中輸入原本家庭邀請碼。
+4. 開啟 GitHub Pages，在「我的自選股」輸入市場、股票代號與顯示名稱，並輸入原本家庭邀請碼。
 5. 每新增/移除股票後，可手動執行一次 workflow；否則會等下一個排程更新行情。
 6. 在持股區輸入市場、代號、股數及平均成本。台股請輸入實際股數（1 張 = 1,000 股）。
 
@@ -170,7 +183,7 @@ Worker 需要沿用既有 bindings/secrets：
 - 多股票資料來源使用 Yahoo Finance/yfinance，可能延遲、缺漏或受交易日/時區影響。台積電的 FinMind 財務與法人資料仍只由原本 2330 流程更新，不會自動套用到其他股票。
 
 ### 重要限制與安全提醒
-- 目前每位使用者的 profile ID 依照「使用者暱稱」儲存在該瀏覽器的 localStorage；同一瀏覽器可用不同暱稱切換清單，不同裝置/瀏覽器也會有獨立清單。清除網站資料或更換瀏覽器會失去該 profile ID，現階段不是具備帳密/忘記密碼功能的正式帳號系統。
+- 每位使用者的 profile ID 依照「使用者暱稱」儲存在該瀏覽器的 localStorage；同一瀏覽器可用不同暱稱切換清單，不同裝置/瀏覽器也會有獨立清單。暱稱同步到 D1 以便管理，但這仍不是具備帳密／忘記密碼功能的正式帳號系統。清除網站資料或更換瀏覽器會失去該 profile ID。
 - 家庭邀請碼是共用存取憑證；持股與自選股 API 目前以邀請碼加 profile ID 區分，不應將 Worker 公開給不受信任對象。正式多人使用前建議升級為 Cloudflare Access / OAuth 或其他個別身份驗證。
 - 持股損益目前只計算 `(最新價 - 平均成本) × 股數`，不包含手續費、交易稅、股利、匯率換算、複委託費用、分批交易與已實現損益。美股 USD 與台股 TWD 分開顯示，不直接合併成單一總資產。
 - V3.0 是多股追蹤的初版，部署前須先執行 D1 migration；尚未進行實際 Cloudflare、Yahoo Finance、GitHub Actions、推播與多裝置端到端驗證。

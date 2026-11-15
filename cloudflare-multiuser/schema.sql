@@ -30,3 +30,9 @@ CREATE TABLE IF NOT EXISTS holdings (
   PRIMARY KEY(owner_id, symbol, market)
 );
 CREATE INDEX IF NOT EXISTS idx_holdings_owner ON holdings(owner_id);
+
+CREATE TABLE IF NOT EXISTS profiles (
+  owner_id TEXT PRIMARY KEY,
+  display_name TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);

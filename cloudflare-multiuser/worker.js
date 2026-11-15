@@ -57,6 +57,20 @@ export default {
       return json({ok:true},200,env);
     }
 
+    if(u.pathname==="/api/profile/sync" && req.method==="POST") {
+      if(req.headers.get("Origin")!==env.ALLOWED_ORIGIN) return json({error:"origin denied"},403,env);
+      const b=await req.json();
+      const ownerId=String(b.ownerId||"");
+      const displayName=String(b.displayName||"").trim();
+      if(b.inviteCode!==env.INVITE_CODE || !/^[a-zA-Z0-9_-]{12,80}$/.test(ownerId)) return json({error:"unauthorized"},403,env);
+      if(!displayName || displayName.length>24) return json({error:"請填寫暱稱（最多24字）"},400,env);
+      const now=new Date().toISOString();
+      await env.DB.prepare(`INSERT INTO profiles(owner_id,display_name,updated_at) VALUES(?,?,?)
+        ON CONFLICT(owner_id) DO UPDATE SET display_name=excluded.display_name,updated_at=excluded.updated_at`)
+        .bind(ownerId,displayName,now).run();
+      return json({ok:true},200,env);
+    }
+
     // Per-browser profile watchlists. The shared invite code is household access,
     // not a full account-authentication system; ownerId is a client-generated profile key.
     if(u.pathname==="/api/watchlist" && req.method==="GET") {
@@ -124,6 +138,34 @@ export default {
       if(req.headers.get("Authorization")!==`Bearer ${env.ADMIN_TOKEN}`) return json({error:"unauthorized"},401);
       const {results=[]}=await env.DB.prepare("SELECT owner_id,symbol,market,display_name FROM watchlists ORDER BY owner_id,symbol").all();
       return json({items:results},200);
+    }
+
+    if(u.pathname==="/admin/profiles" && req.method==="GET") {
+      if(req.headers.get("Authorization")!==`Bearer ${env.ADMIN_TOKEN}`) return json({error:"unauthorized"},401);
+      const {results=[]}=await env.DB.prepare(`WITH owners AS (
+          SELECT owner_id FROM profiles UNION SELECT owner_id FROM watchlists UNION SELECT owner_id FROM holdings
+        )
+        SELECT o.owner_id,p.display_name,
+          COALESCE((SELECT json_group_array(json_object('symbol',w.symbol,'market',w.market,'display_name',w.display_name))
+            FROM watchlists w WHERE w.owner_id=o.owner_id),'[]') AS watchlists_json,
+          COALESCE((SELECT json_group_array(json_object('symbol',h.symbol,'market',h.market,'quantity',h.quantity,'average_cost',h.average_cost,'currency',h.currency))
+            FROM holdings h WHERE h.owner_id=o.owner_id),'[]') AS holdings_json,
+          MAX(COALESCE(p.updated_at,''),COALESCE((SELECT MAX(w.created_at) FROM watchlists w WHERE w.owner_id=o.owner_id),''),
+            COALESCE((SELECT MAX(h.updated_at) FROM holdings h WHERE h.owner_id=o.owner_id),'')) AS last_activity
+        FROM owners o LEFT JOIN profiles p ON p.owner_id=o.owner_id ORDER BY p.display_name,o.owner_id`).all();
+      const profiles=results.map(x=>({...x,watchlists:JSON.parse(x.watchlists_json||"[]"),holdings:JSON.parse(x.holdings_json||"[]")}));
+      return json({profiles});
+    }
+    if(u.pathname==="/admin/profiles" && req.method==="DELETE") {
+      if(req.headers.get("Authorization")!==`Bearer ${env.ADMIN_TOKEN}`) return json({error:"unauthorized"},401);
+      const ownerId=u.searchParams.get("ownerId")||"";
+      if(!/^[a-zA-Z0-9_-]{12,80}$/.test(ownerId)) return json({error:"ownerId 格式不正確"},400);
+      const deleted=await env.DB.batch([
+        env.DB.prepare("DELETE FROM holdings WHERE owner_id=?").bind(ownerId),
+        env.DB.prepare("DELETE FROM watchlists WHERE owner_id=?").bind(ownerId),
+        env.DB.prepare("DELETE FROM profiles WHERE owner_id=?").bind(ownerId)
+      ]);
+      return json({ok:true,ownerId,deleted:deleted.some(result=>(result.meta?.changes||0)>0)});
     }
 
     if(u.pathname==="/admin/devices" && req.method==="GET") {

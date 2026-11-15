@@ -380,6 +380,7 @@ async function loadWatchlist(){
   const status=document.getElementById("watchStatus");
   try{
     await loadPublishedStocks();
+    await v3api("/api/profile/sync","POST",{inviteCode:invite(),ownerId:profileId(),displayName:profileName()});
     const d=await v3api("/api/watchlist?ownerId="+encodeURIComponent(profileId())+"&inviteCode="+encodeURIComponent(invite()));
     const items=d.items||[];
     document.getElementById("watchCount").textContent=items.length+" / 30 檔";
@@ -391,7 +392,7 @@ async function loadWatchlist(){
     }).join("");
     const snapshots=Number(status.dataset.snapshotCount||0);
     status.textContent=`自選股已載入。圖表選單目前有 ${snapshots} 檔行情；新增股票後請執行 GitHub Actions 的 TSMC Daily Monitor，等 stocks.json 更新後即可切換。`;
-  }catch(e){status.textContent=e.message+"。請確認邀請碼及 Worker 已完成 V3 D1 migration。"}
+  }catch(e){status.textContent=e.message+"。請確認邀請碼正確，且 Worker 已套用 D1 migrations 0002、0003。"}
 }
 document.getElementById("addWatch").addEventListener("click",async()=>{
   const symbol=document.getElementById("watchSymbol").value.trim().toUpperCase(),market=document.getElementById("watchMarket").value,name=document.getElementById("watchName").value.trim()||symbol;
