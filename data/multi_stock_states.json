@@ -9,7 +9,7 @@
       "rsi_zone": "偏弱(30-50)",
       "macd": "bear",
       "kd": "K<D",
-      "volume": "normal",
+      "volume": "surge",
       "breakout20": false
     }
   },
@@ -34,7 +34,7 @@
       "price_vs_ma60": "below",
       "ma20_vs_ma60": "bear",
       "ma60_vs_ma120": "bull",
-      "rsi_zone": "偏弱(30-50)",
+      "rsi_zone": "超賣(<30)",
       "macd": "bear",
       "kd": "K<D",
       "volume": "normal",
