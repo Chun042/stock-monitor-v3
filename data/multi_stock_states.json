@@ -1,6 +1,6 @@
 {
   "TW:2330": {
-    "trade_date": "2026-11-17",
+    "trade_date": "2026-11-18",
     "states": {
       "price_vs_ma20": "below",
       "price_vs_ma60": "below",
@@ -9,12 +9,12 @@
       "rsi_zone": "偏弱(30-50)",
       "macd": "bear",
       "kd": "K<D",
-      "volume": "surge",
+      "volume": "normal",
       "breakout20": false
     }
   },
   "TW:2317": {
-    "trade_date": "2026-11-17",
+    "trade_date": "2026-11-18",
     "states": {
       "price_vs_ma20": "below",
       "price_vs_ma60": "below",
@@ -28,7 +28,7 @@
     }
   },
   "TW:3034": {
-    "trade_date": "2026-11-17",
+    "trade_date": "2026-11-18",
     "states": {
       "price_vs_ma20": "below",
       "price_vs_ma60": "below",
@@ -36,7 +36,7 @@
       "ma60_vs_ma120": "bull",
       "rsi_zone": "超賣(<30)",
       "macd": "bear",
-      "kd": "K<D",
+      "kd": "K>D",
       "volume": "normal",
       "breakout20": false
     }
