@@ -1,6 +1,6 @@
 {
   "TW:2330": {
-    "trade_date": "2026-11-17",
+    "trade_date": "2026-11-19",
     "states": {
       "price_vs_ma20": "below",
       "price_vs_ma60": "below",
@@ -9,12 +9,12 @@
       "rsi_zone": "偏弱(30-50)",
       "macd": "bear",
       "kd": "K<D",
-      "volume": "surge",
+      "volume": "normal",
       "breakout20": false
     }
   },
   "TW:2317": {
-    "trade_date": "2026-11-17",
+    "trade_date": "2026-11-19",
     "states": {
       "price_vs_ma20": "below",
       "price_vs_ma60": "below",
