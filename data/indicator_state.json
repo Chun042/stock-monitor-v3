@@ -1,5 +1,5 @@
 {
-  "trade_date": "2026-11-19",
+  "trade_date": "2026-11-23",
   "states": {
     "price_vs_ma20": "below",
     "price_vs_ma60": "below",
@@ -8,7 +8,7 @@
     "rsi_zone": "偏弱(30-50)",
     "macd": "bear",
     "kd": "K<D",
-    "volume": "normal",
+    "volume": "surge",
     "breakout20": false
   },
   "latest_revenue_date": null,
