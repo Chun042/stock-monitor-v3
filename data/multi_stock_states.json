@@ -1,20 +1,6 @@
 {
   "TW:2330": {
-    "trade_date": "2026-11-25",
-    "states": {
-      "price_vs_ma20": "below",
-      "price_vs_ma60": "below",
-      "ma20_vs_ma60": "bear",
-      "ma60_vs_ma120": "bull",
-      "rsi_zone": "偏弱(30-50)",
-      "macd": "bear",
-      "kd": "K>D",
-      "volume": "surge",
-      "breakout20": false
-    }
-  },
-  "TW:2317": {
-    "trade_date": "2026-11-25",
+    "trade_date": "2026-11-26",
     "states": {
       "price_vs_ma20": "below",
       "price_vs_ma60": "below",
@@ -22,8 +8,22 @@
       "ma60_vs_ma120": "bear",
       "rsi_zone": "偏弱(30-50)",
       "macd": "bear",
-      "kd": "K<D",
-      "volume": "surge",
+      "kd": "K>D",
+      "volume": "normal",
+      "breakout20": false
+    }
+  },
+  "TW:2317": {
+    "trade_date": "2026-11-26",
+    "states": {
+      "price_vs_ma20": "below",
+      "price_vs_ma60": "below",
+      "ma20_vs_ma60": "bear",
+      "ma60_vs_ma120": "bear",
+      "rsi_zone": "偏弱(30-50)",
+      "macd": "bear",
+      "kd": "K>D",
+      "volume": "normal",
       "breakout20": false
     }
   }
